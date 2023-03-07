@@ -111,4 +111,3 @@ ansible-playbook -i inventaire.ini --user user-ansible ~/play-book/deluser.yml
 
 # Test GitHub
 # Test user-ansible
-# Test amadou - MacBook Pro
