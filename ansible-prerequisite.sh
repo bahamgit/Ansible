@@ -108,11 +108,3 @@ ansible-playbook -i inventaire.ini --user user-ansible --become --ask-become-pas
 ansible-playbook -i inventaire.ini --user user-ansible ~/play-book/adduser.yml
 ansible-playbook -i inventaire.ini --user user-ansible ~/play-book/deluser.yml
 ansible-playbook -i inventaire.ini --user user-ansible ~/play-book/deluser.yml
-
-# Test GitHub
-<<<<<<< HEAD
-# Test user-ansible
-# Test user-ansible2
-=======
-# Test user-ansible
->>>>>>> 2c5bdadd09169ab51ce41fced35407061f0526fe
