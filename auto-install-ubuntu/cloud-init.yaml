@@ -1,0 +1,343 @@
+#cloud-config
+autoinstall:
+  apt:
+    disable_components: []
+    geoip: true
+    preserve_sources_list: false
+    primary:
+    - arches:
+      - amd64
+      - i386
+      uri: http://fr.archive.ubuntu.com/ubuntu
+    - arches:
+      - default
+      uri: http://ports.ubuntu.com/ubuntu-ports
+  package_update: true
+  package_upgrade: true
+  drivers:
+    install: false
+  identity:
+    hostname: deb
+    password: $6$x34vQnelZhjJ6PUP$gQ7fNL8GL..Pd7NjntXvBGF6wohbke/Wi1Eh8zhgATxf03HQPUnpN.bhX04eOrqXPE643iKbI7.c08104Z1V50
+    realname: deb
+    username: administrator
+  kernel:
+    package: linux-generic
+  keyboard:
+    layout: fr
+    toggle: null
+    variant: ''
+  locale: en_US.UTF-8
+  network:
+    ethernets:
+      ens160:
+        dhcp4: true
+    version: 2
+  ssh:
+    allow-pw: true
+    authorized-keys: []
+    install-server: true
+  storage:
+    config:
+    - ptable: gpt
+      path: /dev/sda
+      wipe: superblock-recursive
+      preserve: false
+      name: ''
+      grub_device: true
+      type: disk
+      id: disk-sda
+    - device: disk-sda
+      size: 1048576
+      flag: bios_grub
+      number: 1
+      preserve: false
+      grub_device: false
+      type: partition
+      id: partition-0
+    - device: disk-sda
+      size: 1073741824
+      wipe: superblock
+      flag: ''
+      number: 2
+      preserve: false
+      grub_device: false
+      type: partition
+      id: partition-1
+    - fstype: xfs
+      volume: partition-1
+      preserve: false
+      type: format
+      id: format-0
+    - device: disk-sda
+      size: 41872785408
+      wipe: superblock
+      flag: ''
+      number: 3
+      preserve: false
+      grub_device: false
+      type: partition
+      id: partition-2
+    - name: vg_system
+      devices:
+      - partition-2
+      preserve: false
+      type: lvm_volgroup
+      id: lvm_volgroup-0
+    - name: lv-system
+      volgroup: lvm_volgroup-0
+      size: 5368709120B
+      wipe: superblock
+      preserve: false
+      type: lvm_partition
+      id: lvm_partition-0
+    - fstype: xfs
+      volume: lvm_partition-0
+      preserve: false
+      type: format
+      id: format-1
+    - path: /
+      device: format-1
+      type: mount
+      id: mount-1
+    - name: lv-swap
+      volgroup: lvm_volgroup-0
+      size: 4294967296B
+      wipe: superblock
+      preserve: false
+      type: lvm_partition
+      id: lvm_partition-1
+    - fstype: swap
+      volume: lvm_partition-1
+      preserve: false
+      type: format
+      id: format-2
+    - path: ''
+      device: format-2
+      type: mount
+      id: mount-2
+    - name: lv-var
+      volgroup: lvm_volgroup-0
+      size: 5368709120B
+      wipe: superblock
+      preserve: false
+      type: lvm_partition
+      id: lvm_partition-2
+    - fstype: xfs
+      volume: lvm_partition-2
+      preserve: false
+      type: format
+      id: format-3
+    - path: /var
+      device: format-3
+      type: mount
+      id: mount-3
+    - name: lv-usr
+      volgroup: lvm_volgroup-0
+      size: 5368709120B
+      wipe: superblock
+      preserve: false
+      type: lvm_partition
+      id: lvm_partition-3
+    - fstype: xfs
+      volume: lvm_partition-3
+      preserve: false
+      type: format
+      id: format-4
+    - path: /usr
+      device: format-4
+      type: mount
+      id: mount-4
+    - name: lv-tmp
+      volgroup: lvm_volgroup-0
+      size: 3221225472B
+      wipe: superblock
+      preserve: false
+      type: lvm_partition
+      id: lvm_partition-4
+    - fstype: xfs
+      volume: lvm_partition-4
+      preserve: false
+      type: format
+      id: format-5
+    - path: /tmp
+      device: format-5
+      type: mount
+      id: mount-5
+    - name: lv-opt
+      volgroup: lvm_volgroup-0
+      size: 3221225472B
+      wipe: superblock
+      preserve: false
+      type: lvm_partition
+      id: lvm_partition-5
+    - fstype: xfs
+      volume: lvm_partition-5
+      preserve: false
+      type: format
+      id: format-6
+    - path: /opt
+      device: format-6
+      type: mount
+      id: mount-6
+    - name: lv-home
+      volgroup: lvm_volgroup-0
+      size: 1073741824B
+      wipe: superblock
+      preserve: false
+      type: lvm_partition
+      id: lvm_partition-6
+    - fstype: xfs
+      volume: lvm_partition-6
+      preserve: false
+      type: format
+      id: format-7
+    - path: /home
+      device: format-7
+      type: mount
+      id: mount-7
+    - path: /boot
+      device: format-0
+      type: mount
+      id: mount-0
+    swap:
+      swap: 0
+  user-data: # Commands here run during first boot (cannot be interactive)
+    runcmd:
+      - usermod -m administrator -l admin -d /home/admin
+      - groupmod -n admin administrator
+      - usermod -aG sudo admin
+      - |
+        cat > "/etc/apt/sources.list.d/main.list" << EOF
+        # Main
+        deb https://fr.archive.ubuntu.com/ubuntu/ focal main restricted multiverse
+        deb-src https://fr.archive.ubuntu.com/ubuntu/ focal main restricted multiverse
+
+        # Updates
+        deb https://fr.archive.ubuntu.com/ubuntu/ focal-updates main restricted multiverse
+        deb-src https://fr.archive.ubuntu.com/ubuntu/ focal-updates main restricted multiverse
+
+        # Security
+        deb https://fr.archive.ubuntu.com/ubuntu/ focal-security main restricted multiverse
+        deb-src https://fr.archive.ubuntu.com/ubuntu/ focal-security main restricted multiverse
+        EOF
+      - apt update
+      - apt install -y microcode.ctl pcp irqbalance sysstat parted lsscsi strace mlocate apt-utils psmisc lsof ncdu tree tldr colordiff rsync screen zip unzip git bind9-utils net-tools curl whois telnet traceroute nmap netcat tcpdump htop iotop iftop ifstat iputils* iperf3 file wget vim rsyslog chrony cockpit cockpit-storaged open-vm-tools cockpit cockpit-storaged
+      - DEBIAN_FRONTEND=noninteractive apt install -y postfix
+      - sed -i "s/^inet_protocols.*$/inet_protocols = ipv4/" "/etc/postfix/main.cf"
+      - sed -i "s/#\?\(PermitRootLogin\s*\).*$/\1no/" "/etc/ssh/sshd_config"
+      - systemctl disable --now NetworkManager
+      - systemctl mask NetworkManager
+      - systemctl enable --now pmlogger cockpit.socket
+      - systemctl enable --now open-vm-tools
+      - sed -i -e "s/^#DNSStubListener=.*/DNSStubListener=no/" -e "s/^#LLMNR=.*/LLMNR=no/" "/etc/systemd/resolved.conf"
+      - systemctl restart systemd-resolved
+      - systemctl disable --now ufw
+      - systemctl mask ufw
+      - |
+        cat > "/etc/sudoers.d/admin" << EOF
+        # Allows people in group sudo to run all commands without password
+        %sudo       ALL=(ALL)       NOPASSWD: ALL
+        EOF
+      - chmod 440 "/etc/sudoers.d/admin"
+      - |
+        cat > "/etc/profile.d/bash_history.sh" << EOF
+        #!/usr/bin/env bash
+        if [[ "/usr/bin/bash" =~ "bash" ]]; then
+          PROMPT_COMMAND="history -w";
+          export HISTTIMEFORMAT="%d/%m/%y %T ";
+          export HISTSIZE="10000";
+          export HISTFILZESIZE="10000";
+          export HISTCONTROL="ignoreboth";
+        fi
+        EOF
+      - |
+        cat > "/etc/profile.d/bash_alias.sh" << EOF
+        #!/usr/bin/env bash 
+        if [[ "/usr/bin/bash" =~ "bash" ]]; then
+            alias ls="ls --color=auto";
+            alias ll="ls \$LS_OPTIONS -alh";
+            alias dir="dir --color=auto";
+            alias rm="rm -i";
+            alias cp="cp -i";
+            alias mv="mv -i";
+            alias ln="ln -i";
+            alias mkdir="mkdir -pv";
+            alias grep="grep --color=auto";
+            alias egrep="egrep --color=auto";
+            alias fgrep="fgrep --color=auto";
+            alias df="df -Th";
+            alias ccze="ccze -A";
+            alias diff="colordiff";
+            alias path="echo -e \${PATH}";
+            alias now="date +'%d-%m-%Y %T'";
+            alias free="free -mt";
+            alias rsync="rsync -P";
+            alias dmesg="dmesg -T";
+        fi
+        EOF
+      - |
+        cat >> "/root/.bashrc" << EOF # Set red prompt (username@hostname)
+        PS1="\[\033[00;31m\]\u@\h:\[\033[01;34m\]\w\\$ \[\033[00m\]";
+        export PS1;
+        EOF
+      - |
+        cat >> "/home/admin/.bashrc" << EOF # Set green prompt (username@hostname)
+        PS1="\[\033[01;32m\]\u@\h:\[\033[01;34m\]\w\\$ \[\033[00m\]";
+        export PS1;
+        EOF
+      - wget "https://raw.githubusercontent.com/tomasr/molokai/master/colors/molokai.vim" -P /usr/share/vim/vim*/colors/
+      - |
+        cat > "/etc/vim/vimrc.local" << EOF
+        if filereadable("/usr/share/vim/vim80/defaults.vim")
+          source /usr/share/vim/vim80/defaults.vim
+        endif
+        " now set the line that the defaults file is not reloaded afterwards!
+        let g:skip_defaults_vim = 1
+        " turn off mouse
+        set mouse=
+        " disable continuation of comments in newline
+        autocmd FileType * setlocal formatoptions-=c formatoptions-=r formatoptions-=o
+        " enable syntax
+        syntax on
+        " set color scheme
+        set t_Co=256
+        let g:molokai_original = 1
+        let g:rehash256 = 1
+        colorscheme molokai
+        EOF
+      - |
+        cat > "/etc/issue" << EOF
+        This is a private computer system. It is for authorized user only.
+        Disconnect IMMEDIATELY if you are not an authorized user!
+
+        Any or all uses of this system and all data on the system may be intercepted, monitored, recorded, copied, audited, inspected, and disclosed to authorized sites and law enforcement personnel, as well as authorized officials of other agencies.
+        By using this system, the user consent to such disclosure at the discretion of authorized site personnel.
+
+        Unauthorized or improper access and use of this system may result in administrative disciplinary action, civil and criminal penalties.
+
+        By continuing to use this system you indicate your awareness of and consent to these terms and conditions of use.
+        EOF
+      - sed -i "s/#Banner none/Banner \/etc\/issue/" "/etc/ssh/sshd_config"
+      - |
+        cat > "/etc/systemd/network/ens160.network" << EOF
+        [Match]
+        Name=ens160
+
+        [Network]
+        Address=192.168.220.21/24
+        Gateway=192.168.220.1
+        DNS=192.168.220.2
+        LinkLocalAddressing=no
+        EOF
+      - |
+        cat > "/etc/sysctl.d/70-disable-ipv6.conf" << EOF
+        net.ipv6.conf.all.disable_ipv6=1
+        net.ipv6.conf.default.disable_ipv6=1
+        EOF
+      - updatedb
+      - history -c
+      - history -w 
+      - sleep 60 && apt purge --auto-remove netplan.io -y  && reboot & 
+  updates: security
+  version: 1

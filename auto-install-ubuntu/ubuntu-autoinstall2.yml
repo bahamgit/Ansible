@@ -1,0 +1,91 @@
+# Auto installation d'une machine Ubuntu avec cloudinit
+
+#########################################################################
+# Prérequis
+# Installer les paquets nécessaires
+apt update && apt upgrade -y
+apt install -y p7zip-full wget cloud-image-utils xorriso
+
+# Récupérer un fichier de configuration par défaut d'un server Ubuntu
+
+cp /var/log/installer/autoinstall-user-data ~/
+
+# Customiser le fichier d'autoinstall
+
+#########################################################################
+# Création du 1er iso
+# Cet iso contenant le fichier d'autoinstall modifié sera utilisé lors du démarrage de la VM
+
+# Création des répertoires nécessaires
+mkdir -p ~/autoinstall-ubuntu/seedAuto/data
+
+# Copier le fichier d'autoinstall modifié dans data et le renommer par user-data
+cp ~/autoinstall-user-data ~/autoinstall-ubuntu/seedAuto/data/user-data
+
+# créer le fichier meta-data dans le dossier data
+touch ~/autoinstall-ubuntu/seedAuto/data/meta-data
+
+# Création de l'iso avec la commande cloud-localds
+cloud-localds ~/seed.iso ~/autoinstall-ubuntu/seedAuto/data/user-data ~/autoinstall-ubuntu/seedAuto/data/meta-data
+
+#########################################################################
+# Création du 2ème iso
+mkdir -p ~/autoinstall/source-files
+
+# Télécharger une image Ubuntu
+cd autoinstall
+wget https://cdimage.ubuntu.com/ubuntu-server/jammy/daily-live/current/jammy-live-server-amd64.iso
+
+# Extraire l'image dans le dossier source-files
+7z -y x jammy-live-server-amd64.iso -osource-files/
+
+# Modifier le GRUB pour utiliser le fichier user-data de l'iso précédemment créé
+cd source-files/
+mv \[BOOT\]/ ../BOOT
+
+vi boot/grub/grub.cfg
+
+menuentry "Autoinstall Ubuntu Server" {
+set gfxpayload=keep
+linux /casper/vmlinuz autoinstall ---
+initrd /casper/initrd
+}
+
+
+sed -i '1a\
+\
+menuentry "Autoinstall Ubuntu Server" {\
+set gfxpayload=keep\
+linux /casper/vmlinuz autoinstall ---\
+initrd /casper/initrd\
+}\
+'  boot/grub/grub.cfg
+
+
+# Utiliser la sortie de la commande xorriso 
+cd ..
+xorriso -indev jammy-live-server-amd64.iso -report_el_torito as_mkisofs
+cd source-files/
+
+xorriso -as mkisofs -r \
+-V 'Ubuntu-Server 22.04.1 LTS amd64' \
+-o ../ubuntuAutoinstall.iso \
+--grub2-mbr ../BOOT/1-Boot-NoEmul.img \
+-partition_offset 16 \
+--mbr-force-bootable \
+-append_partition 2 28732ac11ff8d211ba4b00a0c93ec93b ../BOOT/2-Boot-NoEmul.img \
+-appended_part_as_gpt \
+-iso_mbr_part_type a2a0d0ebe5b9334487c068b6b72699c7 \
+-c '/boot.catalog' \
+-b '/boot/grub/i386-pc/eltorito.img' \
+-no-emul-boot -boot-load-size 4 -boot-info-table --grub2-boot-info \
+-eltorito-alt-boot \
+-e '--interval:appended_partition_2:::' \
+-no-emul-boot \
+.
+
+# Télécharger les iso sur l'ESXi
+cd
+scp seed.iso amad@37.187.132.7:/vmfs/volumes/STORAGE_Commun/iso
+scp autoinstall/ubuntuAutoinstall.iso amad@37.187.132.7:/vmfs/volumes/STORAGE_Commun/iso
+
